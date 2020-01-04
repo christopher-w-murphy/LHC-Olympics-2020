@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import subprocess
 import pandas as pd
@@ -41,9 +42,12 @@ def combine(data_path, file_name, has_labels):
 
 
 if __name__ == '__main__':
-    OPTIONS = parse_args()
-    has_labels = OPTIONS.has_labels
-    file_name = OPTIONS.file_name
+    options = parse_args()
+    has_labels = options.has_labels
+    file_name = options.file_name
 
-    DATA_PATH = '/Users/christopherwmurphy/Documents/projects/lhc_olympics/LHC-Olympics-2020/data_processed'
-    combine(DATA_PATH, file_name, has_labels)
+    with open('./preprocessing/configs.json') as f:
+        config = json.load(f)
+    data_path = config.processedData
+
+    combine(data_path, file_name, has_labels)
