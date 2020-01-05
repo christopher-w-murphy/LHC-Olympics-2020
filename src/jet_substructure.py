@@ -1,4 +1,5 @@
 import argparse
+import json
 import logging
 import os
 from dask import delayed
@@ -16,6 +17,7 @@ def parse_args():
     parser.add_argument('--has_labels', default=False, action='store_true', help='Are the data labeled?')
     parser.add_argument('--file_name', type=str, help='The name of the file to process')
     return parser.parse_args()
+
 
 @timer
 def process_raw_events(input_file, output_file, n_start, n_stop, has_labels):
@@ -43,16 +45,19 @@ def process_raw_events(input_file, output_file, n_start, n_stop, has_labels):
 
 
 if __name__ == '__main__':
-    OPTIONS = parse_args()
-    n_start = OPTIONS.start_row
-    n_stop = OPTIONS.stop_row
-    has_labels = OPTIONS.has_labels
-    file_name = OPTIONS.file_name
+    options = parse_args()
+    n_start = options.start_row
+    n_stop = options.stop_row
+    has_labels = options.has_labels
+    file_name = options.file_name
 
-    INPUT_DIR = '/Users/christopherwmurphy/Documents/projects/lhc_olympics/LHC-Olympics-2020/data_raw'
-    input_file = os.path.join(INPUT_DIR, file_name)
-    OUTPUT_DIR = '/Users/christopherwmurphy/Documents/projects/lhc_olympics/LHC-Olympics-2020/data_processed'
-    output_file = os.path.join(OUTPUT_DIR, 'clustered_{}'.format(file_name))
+    with open('./preprocessing/configs.json') as f:
+        config = json.load(f)
+    input_dir = config.rawData
+    output_dir = config.processedData
+
+    input_file = os.path.join(input_dir, file_name)
+    output_file = os.path.join(output_dir, 'clustered_{}'.format(file_name))
 
     logging.info('Processing events {start} to {stop}'.format(start=n_start, stop=n_stop))
     processor = delayed(process_raw_events)(input_file, output_file, n_start, n_stop, has_labels)
