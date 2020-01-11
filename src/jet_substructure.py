@@ -53,8 +53,8 @@ if __name__ == '__main__':
 
     with open('./preprocessing/configs.json') as f:
         config = json.load(f)
-    input_dir = config.rawData
-    output_dir = config.processedData
+    input_dir = config['rawData']
+    output_dir = config['processedData']
 
     input_file = os.path.join(input_dir, file_name)
     output_file = os.path.join(output_dir, 'clustered_{}'.format(file_name))

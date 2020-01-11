@@ -48,6 +48,6 @@ if __name__ == '__main__':
 
     with open('./preprocessing/configs.json') as f:
         config = json.load(f)
-    data_path = config.processedData
+    data_path = config['processedData']
 
     combine(data_path, file_name, has_labels)
