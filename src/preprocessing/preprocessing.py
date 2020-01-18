@@ -1,4 +1,5 @@
 import logging
+
 from numba import njit
 import numpy as np
 import pandas as pd
@@ -7,22 +8,36 @@ from pyjet import cluster, DTYPE_PTEPM
 logging.basicConfig(level=logging.INFO)
 
 
+@njit('f8[:](f8[:])')
+def et_miss(event):
+    pts = event[::3]
+    phis = event[2::3]
+    px = np.sum(pts * np.cos(phis))
+    py = np.sum(pts * np.sin(phis))
+    # $E_{T,miss}$ is defined as minus the sum of the transverse momenta
+    return -1 * np.array([px, py])
+
+
 class ClusterJets():
     def __init__(self, has_labels):
         self.alljets = dict()
+        self.etmisses = dict()
         self.has_labels = has_labels
         if self.has_labels:
             self.alljets['background'] = list()
             self.alljets['signal'] = list()
+            self.etmisses['background'] = list()
+            self.etmisses['signal'] = list()
         else:
             self.alljets['unlabeled'] = list()
+            self.etmisses['unlabeled'] = list()
 
     def get_jet_inputs(self, event):
         """
         Process the raw data into a format suitable for feeding into pyjet
         """
         n_consts = np.sum(event[::3] > 0)
-        inputs = event[:3 * n_consts].values.reshape(n_consts, 3)
+        inputs = event[:3 * n_consts].reshape(n_consts, 3)
         massless = np.zeros(n_consts).reshape(-1, 1)
         fourvecs = np.append(inputs, massless, axis=1)
         return np.rec.fromarrays(fourvecs.T, dtype=DTYPE_PTEPM)
@@ -35,28 +50,30 @@ class ClusterJets():
         # jet_algos: -1 = anti-kt, 1 = kt, 0 = cambridge-aachen
         sequence = cluster(pseudojets_input, R=jet_size, p=jet_algo)
         jets = sequence.inclusive_jets(ptmin=pt_cut)
+        # while we're here grab the missing transverse energy
+        missing_et = et_miss(event)
         # append event to the appropriate list
         if target is None:
-            self.alljets['unlabeled'] += [jets]
+            self.alljets['unlabeled'].append(jets)
+            self.etmisses['unlabeled'].append(missing_et)
         elif event[target] == 0:
-            self.alljets['background'] += [jets]
+            self.alljets['background'].append(jets)
+            self.etmisses['background'].append(missing_et)
         else:
-            self.alljets['signal'] += [jets]
+            self.alljets['signal'].append(jets)
+            self.etmisses['signal'].append(missing_et)
 
     def cluster_jets(self, events):
         """
         Cluster all the raw data into jets and hold them in `alljets`
         """
-        n_events = len(events)
-        # when labeled the last column of the event is the target
+        # when labeled, the last column of the event is the target
         if self.has_labels:
             target_column = events.columns[-1]
         else:
             target_column = None
-        for i in range(n_events):
-            if i % (n_events // 5) == 0:
-                logging.info('events clustered = %i' % i)
-            self.cluster_jet(events.iloc[i], target_column)
+        for event in events.values:
+            self.cluster_jet(event, target_column)
 
 
 def four_vector(jet):
@@ -183,5 +200,11 @@ class ProcessData():
             *get_substructure(event[1])
         ])
 
-    def create_df(self, events):
-        return pd.DataFrame(data=[self.get_processed_row(event) for event in events], columns=self.column_names)
+    def create_df(self, event_store, key):
+        events = event_store.alljets[key]
+        processed_events = np.array([self.get_processed_row(event) for event in events])
+        missing_ets = np.array(event_store.etmisses[key])
+
+        df1 = pd.DataFrame(data=processed_events, columns=self.column_names)
+        df2 = pd.DataFrame(data=missing_ets, columns=['etmiss_x', 'etmiss_y'])
+        return pd.merge(df1, df2, how='inner', left_index=True, right_index=True)

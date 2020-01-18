@@ -1,7 +1,9 @@
 import logging
 import time
+
 import h5py
 import pandas as pd
+from tables.exceptions import HDF5ExtError
 
 logging.basicConfig(level=logging.INFO)
 
@@ -30,6 +32,6 @@ def df_to_hdf(dataframe, filename, *args, **kwargs):
         try:
             dataframe.to_hdf(filename, *args, **kwargs)
             break
-        except HDF5ExtError as e:
-            logging.error(e)
-            time.sleep(5)
+        except HDF5ExtError:
+            logging.warning('Multiple processes are trying to write to the same file')
+            time.sleep(10)

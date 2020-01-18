@@ -1,5 +1,5 @@
 *.h5
-*.sh
+*.npz
 *.DS_Store
 *.ipynb_checkpoints/
 
