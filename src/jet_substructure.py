@@ -2,8 +2,10 @@ import argparse
 import json
 import logging
 import os
+
 from dask import delayed
 import pandas as pd
+
 from preprocessing.preprocessing import ClusterJets, ProcessData
 from preprocessing.utils import df_to_hdf, get_data, timer
 
@@ -23,18 +25,19 @@ def parse_args():
 def process_raw_events(input_file, output_file, n_start, n_stop, has_labels):
     df_raw = get_data(input_file, start_row=n_start, stop_row=n_stop)
 
+    logging.info('clustering jets')
     cluster_jets = ClusterJets(has_labels)
     cluster_jets.cluster_jets(df_raw)
 
     process_data = ProcessData()
     if has_labels:
         logging.info('processing signal events')
-        df_signal = process_data.create_df(cluster_jets.alljets['signal'])
+        df_signal = process_data.create_df(cluster_jets, 'signal')
         logging.info('processing background events')
-        df_background = process_data.create_df(cluster_jets.alljets['background'])
+        df_background = process_data.create_df(cluster_jets, 'background')
     else:
         logging.info('processing events')
-        df_events = process_data.create_df(cluster_jets.alljets['unlabeled'])
+        df_events = process_data.create_df(cluster_jets, 'unlabeled')
 
     logging.info('writing to HDF')
     if has_labels:
