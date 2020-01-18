@@ -6,8 +6,8 @@ from .utils import get_histograms
 
 def cwola_hunting(df, classifier, spliter, sideband_min, sideband_max, signal_region_min, signal_region_max, feature_cols=None, transformer=None, bin_width=50, clf_quantiles=[0.0, 0.7, 0.9]):
     sideband_region = (df['mass_jj'] > sideband_min-bin_width/2) & (df['mass_jj'] < sideband_max+bin_width/2)
-    signal_region = (df_cwola['mass_jj'] > signal_region_min) & (df_cwola['mass_jj'] < signal_region_max)
     df_cwola = df[sideband_region].copy().reset_index(drop=True)
+    signal_region = (df_cwola['mass_jj'] > signal_region_min) & (df_cwola['mass_jj'] < signal_region_max)
     df_cwola['signal_region'] = signal_region.astype('int64')
 
     if feature_cols is None:
