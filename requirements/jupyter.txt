@@ -6,7 +6,7 @@ defusedxml==0.5.0
 entrypoints==0.3
 html5lib==1.0.1
 ipykernel==4.8.2
-ipython==7.2.0
+ipython==7.16.3
 ipython-genutils==0.2.0
 ipywidgets==7.4.0
 jedi==0.12.1
@@ -19,10 +19,10 @@ jupyter-core==4.4.0
 jupyterlab==1.2.21
 jupyterlab-server==0.2.0
 MarkupSafe==1.1.0
-mistune==0.8.4
+mistune==2.0.3
 nbconvert==6.5.1
 nbformat==4.4.0
-notebook==6.4.1
+notebook==6.4.12
 pandocfilters==1.4.2
 parso==0.3.1
 pexpect==4.6.0
